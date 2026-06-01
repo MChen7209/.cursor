@@ -1,0 +1,119 @@
+---
+description: Standard structure and conventions for Terraform module repositories
+globs: "**/*.tf,**/*.tftest.hcl,**/Makefile,.github/**/*.yml"
+alwaysApply: false
+---
+
+# Terraform Standard Module Repository
+
+Template for creating reusable Terraform module repos under `genesys-emu-cloud-platform/terraform-aws-*`.
+
+## Repository Structure
+
+```
+terraform-aws-{service}/
+├── main.tf                          # Resource definitions
+├── variables.tf                     # Input variables
+├── outputs.tf                       # Output values
+├── versions.tf                      # required_version + required_providers
+├── config.toml                      # CI configuration (required tags, etc.)
+├── Makefile                         # Local test/deploy shortcuts
+├── README.md                        # Usage, default config, inputs/outputs, costs
+├── .github/
+│   ├── actions/setup-tools/
+│   │   └── action.yml               # Composite: install Terraform + AWS CLI with caching
+│   └── workflows/
+│       ├── lint.yml                  # PR only: fmt, validate, tag checks
+│       ├── terraform_test.yml       # PR + push: unit tests with change detection
+│       └── terraform_e2e.yml        # merge_group: apply/validate/destroy with S3 state
+└── tests/
+    ├── unit_*.tftest.hcl            # Mock provider, command = plan, parallel = true
+    ├── e2e_fixtures/                # Shared data sources (VPC/subnet lookups)
+    └── e2e_deploy_*/                # Standalone deployments for e2e
+        ├── backend.tf               # terraform { backend "s3" {} }
+        ├── providers.tf             # AWS provider with default_tags
+        ├── main.tf                  # Module call + data sources
+        └── outputs.tf               # Pass-through outputs for validation
+```
+
+## Variable Conventions
+
+- Required variables (no good default): omit `default` — forces caller to decide
+- Variables with sensible defaults: provide `default`
+- Nullable variables derived from config: use `default = null` with `coalesce()` in locals
+- Security-on defaults: encryption, HA features = `true`
+- Description must state what happens when null if applicable
+
+## Testing
+
+### Unit Tests (`tests/unit_*.tftest.hcl`)
+
+- Use `mock_provider "aws" {}` — no AWS credentials needed
+- Use `command = plan` — no resources created
+- Add `test { parallel = true }` at the top of each file
+- Only test real module logic: count conditionals, for_each, string interpolation, tag merging, output routing
+- Do NOT test variable pass-through (setting value X and asserting it equals X)
+
+### E2E Tests (`tests/e2e_deploy_*/`)
+
+- Standalone Terraform deployments with S3 backend (partial config)
+- Provider includes `default_tags` with all required `itci:*` tags + `itci:CITestDeployDate = timestamp()`
+- GitHub Actions: `terraform apply` → validate via `terraform output` + shell checks → `terraform destroy` with `if: always()`
+- State key includes branch name for isolation: `{account}/{region}/{branch}/{repo}/{test_name}/terraform_state`
+
+### Makefile Targets
+
+```makefile
+test-unit:         # All unit tests
+test-e2e:          # E2E with S3 state backend
+```
+
+Each target runs `terraform init` automatically. Add more granular targets as needed for module variants.
+
+## GitHub Actions Workflows
+
+### Composite Action (`.github/actions/setup-tools/`)
+
+- Installs dependencies via `yum install unzip diffutils`
+- Installs Terraform via `hashicorp/setup-terraform@v3` with `terraform_wrapper: false`
+- Optionally installs AWS CLI v2 with `actions/cache@v5`
+- Terraform version from `vars.TERRAFORM_VERSION` (GitHub repo variable)
+
+### Workflow Triggers
+
+| Workflow | Trigger | Needs AWS |
+|----------|---------|-----------|
+| lint.yml | pull_request | No |
+| terraform_test.yml | pull_request, push to main | No |
+| terraform_e2e.yml | merge_group | Yes (OIDC) |
+
+### OIDC Authentication
+
+Workflows needing AWS access use `genesys-emu-cloud-platform/gh-actions/action/connect-to-aws-oidc@main` with secrets: `ENTRYPOINT_ROLE_ARN`, `EXECUTION_ROLE_ARN`, `EXECUTION_ROLE_SESSION_NAME`.
+
+### Failure Notifications
+
+All workflows send an Adaptive Card to `vars.TEAMS_CI_WEBHOOK` on failure.
+
+## Provider Tags
+
+E2E test providers must include all tags listed in `config.toml` under `[required_tags]`. The lint workflow enforces this automatically.
+
+Standard tags:
+```
+itci:Owner, itci:ManagedBy, itci:ManagedWith, itci:IaCSource, itci:CITest
+```
+
+## README Structure
+
+1. Module name + description
+2. Features list
+3. Usage examples (minimal required inputs)
+4. **Default Configuration** table — what you get with just the required variables
+5. Requirements (Terraform + provider versions)
+6. Inputs tables (Required, then grouped by feature)
+7. Outputs table
+8. Resources Created table
+9. Estimated Costs
+10. Testing section with `make` commands
+11. Security Considerations
