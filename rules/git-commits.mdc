@@ -1,0 +1,87 @@
+---
+description: >-
+  Apply when writing commit messages, creating commits, amending commits, or
+  reworking commit history. Covers message format, scope, and git safety.
+alwaysApply: false
+---
+
+# Git Commits
+
+Only create commits when the user explicitly asks. If unclear, ask first.
+
+## Git Safety
+
+- NEVER update git config
+- NEVER run destructive git commands (force push, hard reset, etc.) unless explicitly requested
+- NEVER push, this will be done by the user, if necessary.
+- NEVER skip hooks (`--no-verify`, `--no-gpg-sign`, etc.) unless explicitly requested
+- NEVER force push to main/master — warn the user if they request it
+- NEVER commit files that likely contain secrets (`.env`, credentials, etc.)
+- NEVER add `Co-authored-by` lines (including Cursor/agent co-author trailers)
+
+## Before Committing
+
+Run in parallel:
+
+- `git status` — untracked and modified files
+- `git diff` and `git diff --cached` — staged and unstaged changes
+- `git log` — recent messages to match repo style
+
+Review all changes. Stage only files that belong in the commit.
+
+## Commit Message Format
+
+Use a HEREDOC for the message:
+
+```bash
+git commit -m "$(cat <<'EOF'
+Subject line in imperative mood.
+
+A few sentences or more (depending on how many changes there were) explaining
+why the change was made and what it accomplishes. Focus on intent, not a file
+list. However be detailed enough that someone reading would understand why
+the change/commit was made.
+
+https://genesyscs.atlassian.net/browse/CP-XXXX
+EOF
+)"
+```
+
+Rules:
+
+- **Subject:** imperative, concise, describes the change (e.g. "Add X", "Split Y into Z")
+  - Does not end with a period
+  - Must fit as a Git commit subject title
+- **Body:** optional but preferred for non-trivial changes; explain why, not just what
+- **Story link:** include the Jira URL on its own line when work is tied to a ticket;
+  omit when there is no ticket
+  - Story number may be in the branch name (format BRANCH_TYPE/CP-STORYNUMBER-extra-info,
+    i.e. feature/cp-123-info, cp-123 is the story)
+  - If story is unknown, ask for the story.
+  - If no story, do not add the story link line.
+  - If Jira story add the link https://genesyscs.atlassian.net/browse/CP-XXXX, otherwise
+    simply add the ID.
+  - **No co-author trailers** — do not append `Co-authored-by:` lines
+
+## Commit Scope
+
+- One logical change per commit — split unrelated work into separate commits
+- Cross-repo changes get separate commits in each repo
+- Do not commit local-only config (dev paths, personal overrides) unless the user
+  explicitly wants them tracked
+- Do not create empty commits when there are no changes
+
+## Amend Rules
+
+Use `git commit --amend` ONLY when ALL are true:
+
+1. User explicitly requested amend, OR pre-commit hook auto-modified files after a
+   successful commit
+2. HEAD commit was created by you in this conversation
+3. Commit has NOT been pushed to remote
+
+If a commit failed or was rejected by a hook, fix the issue and create a NEW commit.
+
+## After Committing
+
+Run `git status` to verify success. Do not push unless the user explicitly asks.
