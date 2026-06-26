@@ -1,0 +1,78 @@
+---
+description: >-
+  Apply when writing or editing README files — co-located, package, or repo
+  READMEs. Covers scope, what belongs in README vs source code.
+alwaysApply: false
+globs: "**/README.md"
+---
+
+# READMEs
+
+## Match the README's scope
+
+Every README answers one question for its **directory or package only**.
+
+| README location | Scope |
+|-----------------|-------|
+| Repo root | Project purpose, how to get started, links to `docs/` when present |
+| Package/plugin | What the package provides; how consumers use it |
+| Subdirectory (e.g. `hooks/`, `kinds/`) | What that area is for in general; when to add things here |
+| Component/field | Consumer usage (config, YAML, API); when to use it |
+
+Write for the **concept** the folder represents — not the current implementation
+or one feature built with it.
+
+```markdown
+<!-- BAD: hooks/README.md — describes one feature we built -->
+Hooks fetch items from gel-template-content and parse the template route.
+
+<!-- GOOD: hooks/README.md — describes hooks in general -->
+Hooks hold shared fetching and scaffolder context that multiple field extensions reuse.
+```
+
+## Do not document files in the README
+
+READMEs go stale when they inventory or explain specific files.
+
+**Avoid in READMEs:**
+
+- Directory trees listing `.ts` / `.tsx` filenames
+- "Implementation: `path/to/file.ts`" or "Register in `App.tsx`"
+- Per-file API detail that duplicates source
+
+**Put file-specific detail in the code** — module docstrings, JSDoc, or file-level
+comments on the export that implements the behavior.
+
+READMEs may name **extension points by concept** (e.g. "kind column registry")
+when a developer must know where to plug in — not a walkthrough of every file.
+
+## What belongs in a README
+
+- **What** this area is and **who** it is for
+- **When** to use or extend it (general scenarios, not one ticket's work)
+- Consumer examples (`template.yaml`, CLI usage, config) where applicable
+- Links to parent README or `docs/` for broader or cross-cutting subjects
+
+Do not duplicate standalone guides from `docs/` — link to them instead. Create
+`docs/` only for distinct repo-wide subjects (see [documentation.mdc](documentation.mdc)).
+
+Keep co-located READMEs short. One "When to use" section with general scenarios
+is enough; defer behavior and options to source docs.
+
+## What belongs in source instead
+
+Move to the implementing file when documentation is about:
+
+- A specific function, hook, action, component, variable, or output's API
+- Inputs, outputs, `ui:options`, error cases, or Terraform `description` text
+- Registration or wiring for that one export
+
+For Terraform modules, document each `variable` and `output` via its `description`
+attribute; the module README covers consumer usage at a high level.
+
+See [documentation.mdc](documentation.mdc) for in-source documentation style by language.
+
+## Markdown style
+
+- Max ~100 characters per line unless a table or code block needs more.
+- Complete sentences; link to specs or parent docs when citing conventions.

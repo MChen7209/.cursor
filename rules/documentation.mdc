@@ -1,0 +1,117 @@
+---
+description: >-
+  Apply when writing or editing documentation — docs/, guides, in-source comments,
+  docstrings, and JSDoc. For README files, see readme.mdc.
+alwaysApply: false
+globs: >-
+  **/*.{md,mdx,ts,tsx,js,jsx,py,go,rs,java,kt,kts,cs,rb,sh,bash,tf,hcl,swift,php}
+---
+
+# Documentation (The top header should be in title case)
+
+## Where detail belongs
+
+| Audience | Location | Content |
+|----------|----------|---------|
+| Template/user consumers | README or `docs/` | Usage, conventions, examples |
+| Developers changing code | Source files | JSDoc, docstrings, variable descriptions, non-obvious logic |
+| System overview | `docs/` or top-level README | Concepts, architecture, how to extend |
+
+**README rules:** scope, no file inventories, general not implementation-specific —
+see [readme.mdc](readme.mdc).
+
+File-specific behavior always lives in the implementing source file, not in a
+README that lists that file.
+
+## In-source documentation
+
+File- and module-level docs should read professionally and follow the language's
+conventions:
+
+| Language | Convention |
+|----------|------------|
+| TypeScript / JavaScript | JSDoc on modules and exports; `@param`, `@returns`, `@example` when helpful |
+| Python | Module docstring; Google or NumPy style for functions and classes |
+| Go | Package comment above `package`; doc comment on exported names |
+| Rust | `//!` for module/crate docs; `///` on public items |
+| Java | Javadoc (`/** … */`) on types and public members |
+| Kotlin | KDoc on public API; `@param`, `@return`, `@sample` when helpful |
+| C# | XML doc comments (`///`) on public types and members |
+| Ruby | YARD/RDoc above methods and classes; `@param`, `@return`, `@example` |
+| Swift | `///` line docs or `/** … */` blocks on public API |
+| PHP | PHPDoc on classes, methods, and properties |
+| Shell (sh/bash) | File header comment (purpose, usage); function comment before each function |
+| Terraform / HCL | `description` on every `variable` and `output`; `#` comments for non-obvious resource logic |
+
+### Terraform / HCL
+
+- Put **input and output documentation** in `description` on the `variable` and
+  `output` blocks — not duplicated per-field in README.
+- Module README: consumer usage, examples, and high-level behavior (see
+  [readme.mdc](readme.mdc)); link to or summarize inputs/outputs without
+  replacing `description` text.
+- Use `#` comments sparingly for non-obvious wiring, lifecycle choices, or
+  provider quirks — not to restate what the HCL already shows.
+- Align with [terraform-module-standard.mdc](terraform-module-standard.mdc) for
+  module repo structure.
+
+### General guidelines
+
+- Lead with **purpose** — what this module or export does and when to use it.
+- Document public API (inputs, outputs, side effects); skip obvious internals.
+- Use `@example` or language equivalent for non-trivial usage.
+- Inline comments: non-obvious business rules only, not restating the code.
+
+Prefer in-source API docs over a README section that repeats the same detail.
+
+## docs/ directory
+
+Create a `docs/` directory only when the repo has **distinct subjects** that
+deserve standalone guides — topics too broad for a co-located README or a single
+package README, and not better served by in-source docs alone.
+
+**Add a doc when:**
+
+- A cross-cutting system or workflow spans multiple packages (e.g. scaffolder
+  actions + fields + backend API).
+- Operators or integrators need a guide that outgrows the root README.
+- A subject is **unique to this repo** — not generic framework usage already
+  covered upstream.
+
+**Do not create `docs/` for:**
+
+- Content that fits a co-located README's scope.
+- File inventories or per-module API reference (belongs in source).
+- Thin wrappers with nothing repo-specific to explain.
+
+Root README should link to `docs/` when it exists; keep the root README as entry
+point, not a duplicate of every guide.
+
+### Architecture
+
+When the repo has a non-trivial structure (multiple services, plugins, deployment
+stages, or data flows), add `docs/architecture.md` (or equivalent) that explains
+how the pieces fit together.
+
+- Prefer a **diagram** — mermaid for flows and components, or ASCII when simpler.
+- Cover boundaries, major integrations, and extension points — not a file tree.
+- Update the diagram when architecture changes materially.
+
+```markdown
+<!-- GOOD: docs/architecture.md excerpt -->
+## Scaffolder flow
+
+Template repo `content/` → gel-template-content API → field extensions → actions → fetch:template
+```
+
+## docs/ writing guidelines
+
+- Explain **what** and **why**, not a map of the repo.
+- Describe extension by **concept**, not by listing every file to touch.
+- Only create or expand docs when asked, or when a new cross-cutting subject
+  needs a consumer- or operator-facing guide.
+
+## Markdown style
+
+- Max ~100 characters per line unless a table or code block needs more.
+- Complete sentences; link to external sources when citing specs or APIs.
